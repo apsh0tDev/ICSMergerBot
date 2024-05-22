@@ -1,8 +1,12 @@
 import discord
 import os
+import io
+import asyncio
 from dotenv import load_dotenv
 from discord.ext import commands
 from datetime import datetime
+from merger import process_file
+
 
 load_dotenv()
 DISCORD_API = os.getenv("TOKEN")
@@ -45,8 +49,16 @@ async def merge(ctx):
             now = datetime.now()
             formatted_date_time = now.strftime('%Y%m%d%H%M')
             txt_filename = f"merged_calendar_{formatted_date_time}.txt"
+            file_content = io.BytesIO(await attachment.read())
             await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
-            
+            file_result = await process_file(file=file_content)
+            file_path = f"{file_result}.ics"
+
+            if os.path.exists(file_path):
+                print(f"The file {file_path} was saved.")
+            else:
+                print(f"Error storing the file {file_path}")
+
 
         else:
             await ctx.send("Format not supported. Please send a valid .txt file")
