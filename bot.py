@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from merger import process_file
 from uploader import upload_files_to_github
-from utils import get_proxy
+from fp.fp import FreeProxy
 
 load_dotenv()
 DISCORD_API = os.getenv("TOKEN")
@@ -13,7 +13,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 public_token = os.getenv("public_token")
-proxy_list = get_proxy()
+proxy = FreeProxy(https=True).get()
 
 @bot.event
 async def on_ready():
