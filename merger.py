@@ -6,13 +6,12 @@ from fake_useragent import UserAgent
 from ics import Calendar
 from datetime import datetime
 
-async def process_file(file):
+async def process_file(file, proxy):
     content = file.read().decode('utf-8')
     lines = content.splitlines()
 
     invalid_urls = []
     valid_urls = []
-    proxy = FreeProxy(https=True).get()
     ua = UserAgent()
     data = []
 
@@ -28,6 +27,7 @@ async def process_file(file):
             data.append(ics)
         except Exception as e:
             print(e)
+        await asyncio.sleep(2)
     
     cal = await merger(data=data)
     with open(cal['name'], 'w') as f:

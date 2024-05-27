@@ -1,18 +1,19 @@
 import discord
 import os
 import io
-import asyncio
 from dotenv import load_dotenv
-from discord.ext import commands
-from datetime import datetime
+from discord.ext import commands, tasks
 from merger import process_file
-
+from uploader import upload_files_to_github
+from utils import get_proxy
 
 load_dotenv()
 DISCORD_API = os.getenv("TOKEN")
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
+public_token = os.getenv("public_token")
+proxy_list = get_proxy()
 
 @bot.event
 async def on_ready():
@@ -45,17 +46,23 @@ async def merge(ctx):
     if len(ctx.message.attachments) > 0:
         attachment = ctx.message.attachments[0]
         if attachment.filename.endswith('.txt'):
-            repo = "apsh0tDev/ICSMerger_calendars"
-            now = datetime.now()
-            formatted_date_time = now.strftime('%Y%m%d%H%M')
-            txt_filename = f"merged_calendar_{formatted_date_time}.txt"
             file_content = io.BytesIO(await attachment.read())
             await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
-            file_result = await process_file(file=file_content)
-            file_path = f"{file_result}.ics"
+            file_result = await process_file(file=file_content, proxy=proxy)
+            file_path = f"{file_result}"
 
             if os.path.exists(file_path):
                 print(f"The file {file_path} was saved.")
+                txt_filename = replace_extension(file_path=file_path)
+                await attachment.save(txt_filename)
+                upload = await upload_files_to_github(file_path, txt_filename, public_token)
+                if upload == "Success":
+                    merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
+                    await ctx.send(f"Done! 👍 Here's your calendar: {merged_calendar_url}")
+                elif upload == "Error":
+                    await ctx.send(f"There was an error, please try again in a couple of minutes")
+
+
             else:
                 print(f"Error storing the file {file_path}")
 
@@ -67,6 +74,15 @@ async def merge(ctx):
 
 def startBot():
     bot.run(DISCORD_API)
+
+
+def replace_extension(file_path):
+    root, ext = os.path.splitext(file_path)
+    if ext == ".ics":
+        new_file_path = root + ".txt"
+        return new_file_path
+    else:
+        return file_path
 
 if __name__ == "__main__":
     startBot()
