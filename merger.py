@@ -2,7 +2,7 @@ import re
 import asyncio
 import aiohttp
 import requests
-import random
+import random                                                                                                                                                                                                                                                                    
 from fp.fp import FreeProxy
 from fake_useragent import UserAgent
 from ics import Calendar
@@ -66,6 +66,9 @@ async def fetch_ics_data(url, ua):
                     if response.status == 200 and response.headers.get('content-type', '').startswith('text/calendar'):
                         ics_content = await response.text()
                         return ics_content
+                    elif response.status == 403:
+                        ics_content = await fetch_data_with_proxy(url, headers)
+                        return ics_content
                     else:
                         print("Unexpected Content-Type:", response.headers.get('content-type'))
                         body = await response.text()
@@ -74,7 +77,22 @@ async def fetch_ics_data(url, ua):
         except Exception as e:
             print("An error occurred:", str(e))
             attempt_count += 1
-
+    
+async def fetch_data_with_proxy(url, headers):
+    proxy = FreeProxy().get()
+    try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers, proxy=proxy) as response:
+                    print("Status: ", response.status)
+                    if response.status == 200 and response.headers.get('content-type', '').startswith('text/calendar'):
+                        ics_content = await response.text()
+                        return ics_content
+                    else:
+                        print("Unexpected Content-Type:", response.headers.get('content-type'))
+                        body = await response.text()
+                        print("Body:", body[:500])
+    except Exception as e:
+            print("An error occurred:", str(e))
         
 async def merger(data):
     merged_calendar = Calendar()
