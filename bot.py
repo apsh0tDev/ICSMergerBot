@@ -4,7 +4,7 @@ import io
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from merger import process_file
-from uploader import upload_files_to_github
+from uploader import upload_to_supabase, getPublicUrl
 from fp.fp import FreeProxy
 
 load_dotenv()
@@ -13,7 +13,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 public_token = os.getenv("public_token")
-proxy = FreeProxy(https=True).get()
+
 
 @bot.event
 async def on_ready():
@@ -48,6 +48,7 @@ async def merge(ctx):
         if attachment.filename.endswith('.txt'):
             file_content = io.BytesIO(await attachment.read())
             await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
+            proxy = FreeProxy(https=True).get()
             file_result = await process_file(file=file_content, proxy=proxy)
             file_path = f"{file_result}"
 
@@ -55,9 +56,11 @@ async def merge(ctx):
                 print(f"The file {file_path} was saved.")
                 txt_filename = replace_extension(file_path=file_path)
                 await attachment.save(txt_filename)
-                upload = await upload_files_to_github(file_path, txt_filename, public_token)
+                #upload = await upload_files_to_github(file_path, txt_filename, public_token)
+                upload = await upload_to_supabase(file_path, txt_filename)
                 if upload == "Success":
-                    merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
+                    merged_calendar_url = await getPublicUrl(file_path)
+                    #merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
                     await ctx.send(f"Done! 👍 Here's your calendar: {merged_calendar_url}")
                 elif upload == "Error":
                     await ctx.send(f"There was an error, please try again in a couple of minutes")
@@ -74,7 +77,6 @@ async def merge(ctx):
 
 def startBot():
     bot.run(DISCORD_API)
-
 
 def replace_extension(file_path):
     root, ext = os.path.splitext(file_path)
