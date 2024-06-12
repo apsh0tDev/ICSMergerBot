@@ -67,7 +67,8 @@ async def fetch_ics_data(url, ua):
                         ics_content = await response.text()
                         return ics_content
                     elif response.status == 403:
-                        ics_content = await fetch_data_with_proxy(url, headers)
+                        proxy = FreeProxy().get()
+                        ics_content = await fetch_data_with_proxy(url, headers, proxy)
                         return ics_content
                     else:
                         print("Unexpected Content-Type:", response.headers.get('content-type'))
@@ -78,8 +79,7 @@ async def fetch_ics_data(url, ua):
             print("An error occurred:", str(e))
             attempt_count += 1
     
-async def fetch_data_with_proxy(url, headers):
-    proxy = FreeProxy().get()
+async def fetch_data_with_proxy(url, headers, proxy):
     print("Trying to connect using proxy: ", proxy)
     try:
             async with aiohttp.ClientSession() as session:
