@@ -38,7 +38,7 @@ async def process_file(file):
             data.append(ics)
         except Exception as e:
             print(e)
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
     
     cal = await merger(data=data)
     with open(cal['name'], 'w') as f:
@@ -80,6 +80,7 @@ async def fetch_ics_data(url, ua):
     
 async def fetch_data_with_proxy(url, headers):
     proxy = FreeProxy().get()
+    print("Trying to connect using proxy: ", proxy)
     try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, proxy=proxy) as response:
