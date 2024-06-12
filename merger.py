@@ -67,7 +67,7 @@ async def fetch_ics_data(url, ua):
                         ics_content = await response.text()
                         return ics_content
                     elif response.status == 403:
-                        proxy = FreeProxy().get()
+                        proxy = FreeProxy(country_id=['US']).get()
                         ics_content = await fetch_data_with_proxy(url, headers, proxy)
                         return ics_content
                     else:
