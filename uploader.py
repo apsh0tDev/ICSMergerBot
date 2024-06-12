@@ -12,6 +12,7 @@ email = os.getenv("SUPABASE_EMAIL")
 password = os.getenv("SUPABASE_PASSWORD")
 supabase: Client = create_client(url, key)
 bucket_name = "calendars"
+type_tiny = pyshorteners.Shortener()
 
 async def upload_to_supabase(ics, txt):
     ics_exists = os.path.exists(ics)
@@ -48,7 +49,9 @@ async def upload_to_supabase(ics, txt):
 
 async def getPublicUrl(file_path):
      data = supabase.storage.from_(bucket_name).get_public_url(file_path)
-     url = pyshorteners.Shortener().gitio.short(data)
+     url = ''
+     if data.status_code == 404:
+          url = type_tiny.tinyurl.short(data)
      return url
          
 #DEPRECATED

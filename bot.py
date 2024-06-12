@@ -59,6 +59,7 @@ async def merge(ctx):
                 #upload = await upload_files_to_github(file_path, txt_filename, public_token)
                 upload = await upload_to_supabase(file_path, txt_filename)
                 if upload == "Success":
+                    print(file_path)
                     merged_calendar_url = await getPublicUrl(file_path)
                     #merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
                     await ctx.send(f"Done! 👍 Here's your calendar: {merged_calendar_url}")
