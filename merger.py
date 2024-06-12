@@ -1,12 +1,23 @@
 import re
 import asyncio
 import aiohttp
+import requests
+import random
 from fp.fp import FreeProxy
 from fake_useragent import UserAgent
 from ics import Calendar
 from datetime import datetime
 
-async def process_file(file, proxy):
+
+def getProxyList():
+    data = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all")
+    data_list = [proxy.strip() for proxy in data.text.split('\n') if proxy.strip]
+    return data_list
+    
+
+proxy_list = getProxyList()
+
+async def process_file(file):
     content = file.read().decode('utf-8')
     lines = content.splitlines()
 
@@ -23,11 +34,11 @@ async def process_file(file, proxy):
             valid_urls.append(url)
     for url in valid_urls:
         try:
-            ics = await asyncio.create_task(fetch_ics_data(url=url, proxy=proxy, ua=ua.random))
+            ics = await asyncio.create_task(fetch_ics_data(url=url, ua=ua.random))
             data.append(ics)
         except Exception as e:
             print(e)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
     
     cal = await merger(data=data)
     with open(cal['name'], 'w') as f:
@@ -35,9 +46,8 @@ async def process_file(file, proxy):
 
     return cal['name']
 
-async def fetch_ics_data(url, proxy, ua):
+async def fetch_ics_data(url, ua):
     print(f"Fetching data from: {url}")
-    print(f"Proxy: {proxy}")
     print(f"User Agent: {ua}")
     attempt_count = 0
     while attempt_count < 3:
@@ -51,7 +61,7 @@ async def fetch_ics_data(url, proxy, ua):
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, proxy=proxy) as response:
+                async with session.get(url, headers=headers) as response:
                     print("Status: ", response.status)
                     if response.status == 200 and response.headers.get('content-type', '').startswith('text/calendar'):
                         ics_content = await response.text()
