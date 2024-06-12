@@ -1,12 +1,11 @@
 import discord
 import os
 import io
-import requests
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from merger import process_file
 from uploader import upload_files_to_github
-import random
+from fp.fp import FreeProxy
 
 load_dotenv()
 DISCORD_API = os.getenv("TOKEN")
@@ -14,6 +13,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 public_token = os.getenv("public_token")
+proxy = FreeProxy(https=True).get()
 
 @bot.event
 async def on_ready():
@@ -48,7 +48,7 @@ async def merge(ctx):
         if attachment.filename.endswith('.txt'):
             file_content = io.BytesIO(await attachment.read())
             await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
-            file_result = await process_file(file=file_content)
+            file_result = await process_file(file=file_content, proxy=proxy)
             file_path = f"{file_result}"
 
             if os.path.exists(file_path):

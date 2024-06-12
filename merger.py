@@ -1,23 +1,12 @@
 import re
 import asyncio
 import aiohttp
-import requests
-import random                                                                                                                                                                                                                                                                    
 from fp.fp import FreeProxy
 from fake_useragent import UserAgent
 from ics import Calendar
 from datetime import datetime
 
-
-def getProxyList():
-    data = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all")
-    data_list = [proxy.strip() for proxy in data.text.split('\n') if proxy.strip]
-    return data_list
-    
-
-proxy_list = getProxyList()
-
-async def process_file(file):
+async def process_file(file, proxy):
     content = file.read().decode('utf-8')
     lines = content.splitlines()
 
@@ -34,7 +23,7 @@ async def process_file(file):
             valid_urls.append(url)
     for url in valid_urls:
         try:
-            ics = await asyncio.create_task(fetch_ics_data(url=url, ua=ua.random))
+            ics = await asyncio.create_task(fetch_ics_data(url=url, proxy=proxy, ua=ua.random))
             data.append(ics)
         except Exception as e:
             print(e)
@@ -46,8 +35,9 @@ async def process_file(file):
 
     return cal['name']
 
-async def fetch_ics_data(url, ua):
+async def fetch_ics_data(url, proxy, ua):
     print(f"Fetching data from: {url}")
+    print(f"Proxy: {proxy}")
     print(f"User Agent: {ua}")
     attempt_count = 0
     while attempt_count < 3:
@@ -61,28 +51,6 @@ async def fetch_ics_data(url, ua):
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    print("Status: ", response.status)
-                    if response.status == 200 and response.headers.get('content-type', '').startswith('text/calendar'):
-                        ics_content = await response.text()
-                        return ics_content
-                    elif response.status == 403:
-                        proxy = FreeProxy(country_id=['US']).get()
-                        ics_content = await fetch_data_with_proxy(url, headers, proxy)
-                        return ics_content
-                    else:
-                        print("Unexpected Content-Type:", response.headers.get('content-type'))
-                        body = await response.text()
-                        print("Body:", body[:500])
-                        attempt_count += 1
-        except Exception as e:
-            print("An error occurred:", str(e))
-            attempt_count += 1
-    
-async def fetch_data_with_proxy(url, headers, proxy):
-    print("Trying to connect using proxy: ", proxy)
-    try:
-            async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers, proxy=proxy) as response:
                     print("Status: ", response.status)
                     if response.status == 200 and response.headers.get('content-type', '').startswith('text/calendar'):
@@ -92,8 +60,11 @@ async def fetch_data_with_proxy(url, headers, proxy):
                         print("Unexpected Content-Type:", response.headers.get('content-type'))
                         body = await response.text()
                         print("Body:", body[:500])
-    except Exception as e:
+                        attempt_count += 1
+        except Exception as e:
             print("An error occurred:", str(e))
+            attempt_count += 1
+
         
 async def merger(data):
     merged_calendar = Calendar()
