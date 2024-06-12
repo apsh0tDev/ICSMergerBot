@@ -1,6 +1,51 @@
 import os
 import base64
 import requests
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+load_dotenv()
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
+email = os.getenv("SUPABASE_EMAIL")
+password = os.getenv("SUPABASE_PASSWORD")
+supabase: Client = create_client(url, key)
+bucket_name = "calendars"
+
+async def upload_to_supabase(ics, txt):
+    ics_exists = os.path.exists(ics)
+    txt_exists = os.path.exists(txt)
+    txt_file_name = os.path.basename(txt)
+    ics_file_name = os.path.basename(ics)
+
+    if ics_exists and txt_exists:
+                 #Upload txt
+        with open(txt, "rb") as file:
+            content_txt = base64.b64encode(file.read()).decode()
+            response_txt = supabase.storage.from_(bucket_name).upload(txt_file_name, content_txt)
+
+        #Upload ics
+        with open(ics, "rb") as file:
+            content_ics = base64.b64encode(file.read()).decode()
+            response_ics = supabase.storage.from_(bucket_name).upload(ics_file_name, content_ics)
+
+        if response_txt.status_code == 201:
+            print("Txt successfully uploaded.")
+        else:
+                print(f"Failed to upload TXT file. Status code: {response_txt.status_code}")
+                print("Response:", response_txt.json())
+
+        if response_ics.status_code == 201:
+            print("ICS successfully uploaded.")
+        else:
+                print(f"Failed to upload TXT file. Status code: {response_ics.status_code}")
+                print("Response:", response_ics.json())
+
+        if response_ics.status_code == 201 and response_txt.status_code == 201:
+             return "Success"
+        else:
+             return "Error uploading files"
+         
 
 async def upload_files_to_github(ics, txt, token):
     ics_exists = os.path.exists(ics)
