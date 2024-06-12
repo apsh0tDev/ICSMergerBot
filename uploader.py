@@ -49,9 +49,7 @@ async def upload_to_supabase(ics, txt):
 
 async def getPublicUrl(file_path):
      data = supabase.storage.from_(bucket_name).get_public_url(file_path)
-     url = ''
-     if data.status_code == 404:
-          url = type_tiny.tinyurl.short(data)
+     url = type_tiny.tinyurl.short(data)
      return url
          
 #DEPRECATED
