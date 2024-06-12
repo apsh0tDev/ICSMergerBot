@@ -48,7 +48,7 @@ async def upload_to_supabase(ics, txt):
 
 async def getPublicUrl(file_path):
      data = supabase.storage.from_(bucket_name).get_public_url(file_path)
-     url = pyshorteners.Shortener().owly.short(data)
+     url = pyshorteners.Shortener().gitio.short(data)
      return url
          
 #DEPRECATED
