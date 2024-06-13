@@ -79,7 +79,10 @@ def fetch_data(url, max_attempts=3, use_proxy=False):
                 proxy_list = {
                     'http' : proxy,
                 }
-                response = requests.get(url=url, headers=headers) 
+                if use_proxy:
+                    response = requests.get(url=url, headers=headers, proxies=proxy_list)
+                else:
+                    response = requests.get(url=url, headers=headers)
                 print("Status: ", response.status_code)
 
                 content = response.text
