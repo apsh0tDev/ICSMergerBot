@@ -6,7 +6,7 @@ from fake_useragent import UserAgent
 from ics import Calendar
 from datetime import datetime
 
-async def process_file(file, proxy):
+async def process_file(file, proxy, file_name):
     content = file.read().decode('utf-8')
     lines = content.splitlines()
 
@@ -29,7 +29,7 @@ async def process_file(file, proxy):
             print(e)
         await asyncio.sleep(2)
     
-    cal = await merger(data=data)
+    cal = await merger(data=data, file_name=file_name)
     with open(cal['name'], 'w') as f:
         f.write(cal['data'])
 
@@ -66,26 +66,37 @@ async def fetch_ics_data(url, proxy, ua):
             attempt_count += 1
 
         
-async def merger(data):
+async def merger(data, file_name):
     merged_calendar = Calendar()
 
     for item in data:
         cal = Calendar(item)
         merged_calendar.events.update(cal.events)
-    
-    calendar_name = "Merger Calendar"
+
     merged_calendar_str = merged_calendar.serialize()
     calendar_lines = merged_calendar_str.splitlines()
 
     for i, line in enumerate(calendar_lines):
         if line.startswith("BEGIN:VCALENDAR"):
-            calendar_lines.insert(i + 1, f"X-WR-CALNAME:{calendar_name}")
+            calendar_lines.insert(i + 1, f"X-WR-CALNAME:{file_name}")
+            calendar_lines.insert(i + 1, f"X-WR-TIMEZONE:America/New_York")
             break
 
     merged_calendar_with_name = "\n".join(calendar_lines)
     now = datetime.now()
     formatted_date_time = now.strftime('%Y%m%d%H%M')
-    calendar_filename = f"merged_calendar_{formatted_date_time}.ics"
+ # Convert to lowercase
+    file_name = file_name.lower()
+
+    # Replace spaces with underscores
+    file_name = file_name.replace(' ', '_')
+
+    # Replace hyphens with underscores
+    file_name = file_name.replace('-', '_')
+
+    # Set calendar_name to the modified file_name
+    calendar_name = file_name
+    calendar_filename = f"{calendar_name}_{formatted_date_time}.ics"
 
     calmerged = {
         "name" : calendar_filename,

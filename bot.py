@@ -41,40 +41,46 @@ async def custom_help(ctx):
     )
     await ctx.send(help_message)
 
-@bot.command()
-async def merge(ctx):
-    if len(ctx.message.attachments) > 0:
-        attachment = ctx.message.attachments[0]
-        if attachment.filename.endswith('.txt'):
-            file_content = io.BytesIO(await attachment.read())
-            await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
-            proxy = FreeProxy(https=True).get()
-            file_result = await process_file(file=file_content, proxy=proxy)
-            file_path = f"{file_result}"
+@bot.command(pass_context=True)
+async def merge(ctx,*,message):
+    try:
+        if len(ctx.message.attachments) > 0:
+            attachment = ctx.message.attachments[0]
+            if attachment.filename.endswith('.txt'):
+                file_content = io.BytesIO(await attachment.read())
+                await ctx.send("📂 Got your file! Please wait a few moments while the merge is completed. ⌛")
+                proxy = FreeProxy(https=True).get()
+                print("Calendar name: ", message)
+                file_result = await process_file(file=file_content, proxy=proxy, file_name=message)
+                file_path = f"{file_result}"
 
-            if os.path.exists(file_path):
-                print(f"The file {file_path} was saved.")
-                txt_filename = replace_extension(file_path=file_path)
-                await attachment.save(txt_filename)
-                #upload = await upload_files_to_github(file_path, txt_filename, public_token)
-                upload = await upload_to_supabase(file_path, txt_filename)
-                if upload == "Success":
-                    print(file_path)
-                    merged_calendar_url = await getPublicUrl(file_path)
-                    #merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
-                    await ctx.send(f"Done! 👍 Here's your calendar: {merged_calendar_url}")
-                elif upload == "Error":
-                    await ctx.send(f"There was an error, please try again in a couple of minutes")
+                if os.path.exists(file_path):
+                    print(f"The file {file_path} was saved.")
+                    txt_filename = replace_extension(file_path=file_path)
+                    await attachment.save(txt_filename)
+                    #upload = await upload_files_to_github(file_path, txt_filename, public_token)
+                    upload = await upload_to_supabase(file_path, txt_filename)
+                    if upload == "Success":
+                        print(file_path)
+                        merged_calendar_url = await getPublicUrl(file_path)
+                        #merged_calendar_url = f"https://raw.githubusercontent.com/apsh0tDev/ICSMerger_calendars/master/{file_path}"
+                        await ctx.send(f"Done! 👍 Here's your calendar: {merged_calendar_url}")
+                    elif upload == "Error":
+                        await ctx.send(f"There was an error, please try again in a couple of minutes")
+
+
+                else:
+                    print(f"Error storing the file {file_path}")
 
 
             else:
-                print(f"Error storing the file {file_path}")
-
-
+                await ctx.send("Format not supported. Please send a valid .txt file")
         else:
-            await ctx.send("Format not supported. Please send a valid .txt file")
-    else:
-        await ctx.send("No file attached! Please type !merge and attach a .txt file containing the list of URLs.")
+            await ctx.send("No file attached! Please type !merge and attach a .txt file containing the list of URLs.")
+
+    except Exception as e:
+        print("Error: ", e)
+        await ctx.send("An error occurred while processing the file. Please try again.")
 
 def startBot():
     bot.run(DISCORD_API)
