@@ -78,11 +78,10 @@ def fetch_data(url, max_attempts=3, use_proxy=False):
                 proxy = random.choice(proxies)
                 proxy_list = {
                     'http' : proxy,
-                    'https' : proxy
                 }
                 if use_proxy:
                     print("Using proxy: ", proxy_list)
-                    response = requests.get(url=url, headers=headers, proxies=proxy_list)
+                    response = requests.get(url=url, headers=headers, proxies=proxy_list, verify=False)
                 else:
                     response = requests.get(url=url, headers=headers)
                 print("Status: ", response.status_code)
