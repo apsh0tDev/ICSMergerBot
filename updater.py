@@ -47,9 +47,12 @@ def main():
             ## ----------""")
             lines = text_content.splitlines()
             for line in lines:
+                use_proxy = False
                 url = line.strip()
+                if "rentals.tripadvisor" in url:
+                    use_proxy = True
                 try:
-                    ics = fetch_data(url=url)
+                    ics = fetch_data(url=url, use_proxy=use_proxy)
                     if ics != None:
                         calendars_content.append(ics)
                 except Exception as e:
@@ -58,7 +61,7 @@ def main():
     file_name_no_ext = item['name'].replace(".txt", "")
     print("Cycle done.")
 
-def fetch_data(url, max_attempts=3):
+def fetch_data(url, max_attempts=3, use_proxy=False):
     print(f"Fetching data from: {url}")
     ua = UserAgent()
     attempt_count = 0
