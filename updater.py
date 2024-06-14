@@ -132,7 +132,7 @@ def merge(content, file_name):
 
 
 schedule.cyclic(dt.timedelta(minutes=3), get_proxies)
-schedule.cyclic(dt.timedelta(minutes=2), run_main)
+schedule.cyclic(dt.timedelta(minutes=10), run_main)
 
 #Function to find the X-WR-CALNAME and use it in the new calendar
 def find_calname(text):
